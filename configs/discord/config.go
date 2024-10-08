@@ -8,13 +8,18 @@ import (
 )
 
 type Config struct {
-	DBHost     string
-	DBName     string
-	DBUser     string
-	DBPassword string
+	DBHost           string
+	DBName           string
+	DBUser           string
+	DBPassword       string
+	DiscordBotToken  string
+	DiscordAppId     string
+	DiscordPublicKey string
 }
 
-func LoadConfig() *Config {
+var Cfg Config
+
+func LoadConfig() {
 	// Can't be used in docker
 	err := godotenv.Load(".env")
 
@@ -22,12 +27,13 @@ func LoadConfig() *Config {
 		log.Fatalf("Cannot load .env")
 	}
 
-	return &Config{
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBName:     getEnv("DB_NAME", "bingobot-db-1"),
-		DBUser:     getEnv("DB_USER", "bingobot-user-1"),
-		DBPassword: getEnv("DB_PASSWORD", "bingobot-password-1"),
-	}
+	Cfg.DBHost = getEnv("DB_HOST", "localhost")
+	Cfg.DBName = getEnv("DB_NAME", "bingobot-db-1")
+	Cfg.DBUser = getEnv("DB_USER", "bingobot-user-1")
+	Cfg.DBPassword = getEnv("DB_PASSWORD", "bingobot-password-1")
+	Cfg.DiscordBotToken = getEnv("DISCORD_BOT_TOKEN", "test-token-1")
+	Cfg.DiscordAppId = getEnv("DISCORD_APP_ID", "app-id-1")
+	Cfg.DiscordPublicKey = getEnv("DISCORD_PUBLIC_KEY", "public-key-1")
 }
 
 func getEnv(key string, defaultVal string) string {
