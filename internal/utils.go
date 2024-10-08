@@ -1,12 +1,14 @@
 package internal_utils
 
 import (
+	"log"
+
 	"fmt"
 	"os"
 	"path/filepath"
 )
 
-// dir returns the absolute path of the given environment file (envFile) in the Go module's
+// Returns the absolute path of the given environment file (envFile) in the Go module's
 // root directory. It searches for the 'go.mod' file from the current working directory upwards
 // and appends the envFile to the directory containing 'go.mod'.
 // It panics if it fails to find the 'go.mod' file.
@@ -31,4 +33,16 @@ func Dir(envFile string) string {
 	}
 
 	return filepath.Join(currentDir, envFile)
+}
+
+// Fetches variable from env file.
+// If no key found it sets the `defaultVal` instead.
+// Also prints the warning to the console in such case.
+func GetEnv(key string, defaultVal string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+
+	log.Printf("WARNING: Default value '%s' is used for key: '%s'", defaultVal, key)
+	return defaultVal
 }

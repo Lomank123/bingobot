@@ -9,7 +9,15 @@ TG/Discord bot with various unique features
 - k8s
 
 
-## Discord bot token
+## Telegram
+
+- Open Telegram
+- Find user named "BotFather"
+- Start a chat (`/start`)
+- Follow the instructions and in the end copy the generated API key to `TELEGRAM_BOT_TOKEN` variable in `.env`
+
+
+## Discord
 
 - Go to https://discord.com/developers/applications
 - Create your application

@@ -1,7 +1,7 @@
 package main
 
 import (
-	discord_config "bingobot/configs/discord"
+	config "bingobot/configs/discord"
 	"fmt"
 	"log"
 	"os"
@@ -53,7 +53,7 @@ func handleEcho(s *discordgo.Session, i *discordgo.InteractionCreate, opts optio
 }
 
 func setupBot() {
-	session, _ := discordgo.New("Bot " + discord_config.Cfg.DiscordBotToken)
+	session, _ := discordgo.New("Bot " + config.Cfg.DiscordBotToken)
 
 	// Handlers
 	session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -77,9 +77,9 @@ func setupBot() {
 
 	// Commands
 	_, err := session.ApplicationCommandBulkOverwrite(
-		discord_config.Cfg.DiscordAppId,
+		config.Cfg.DiscordAppId,
 		"",
-		discord_config.Commands,
+		config.Commands,
 	)
 
 	if err != nil {
@@ -107,6 +107,6 @@ func setupBot() {
 
 func main() {
 	log.Println("Bingo Bot v1 starting...")
-	discord_config.LoadConfig()
+	config.LoadConfig()
 	setupBot()
 }
