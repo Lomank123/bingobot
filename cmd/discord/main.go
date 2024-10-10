@@ -12,6 +12,12 @@ import (
 
 type optionMap = map[string]*discordgo.ApplicationCommandInteractionDataOption
 
+func main() {
+	fmt.Println("Bingo Bot (Discord) starting...")
+	config.LoadConfig()
+	setupBot()
+}
+
 func parseOptions(options []*discordgo.ApplicationCommandInteractionDataOption) (om optionMap) {
 	om = make(optionMap)
 
@@ -103,10 +109,4 @@ func setupBot() {
 	if err != nil {
 		log.Printf("couldn't close session gracefully: %s", err)
 	}
-}
-
-func main() {
-	log.Println("Bingo Bot v1 starting...")
-	config.LoadConfig()
-	setupBot()
 }

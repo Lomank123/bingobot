@@ -2,16 +2,39 @@ package main
 
 import (
 	config "bingobot/configs/telegram"
+	"context"
 	"fmt"
 	"log"
+	"time"
+
+	mongo_client "bingobot/internal/mongodb"
 
 	telegram "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func main() {
+	fmt.Println("Bingo Bot (Telegram) starting...")
+
+	// ENV setup
 	config.LoadConfig()
-	fmt.Printf("Telegram bot starts... %s", config.Cfg.TelegramBotToken)
+
+	// DB Setup
+	err := mongo_client.ConnectToDB(config.Cfg.DBURI)
+	if err != nil {
+		log.Fatalf("Failed to connect to MongoDB: %s", err)
+	}
+
 	setupBot()
+
+	// Gracefully disconnect from DB
+	// TODO: Test this, if works - add to discord
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	defer func() {
+		if err := mongo_client.DBClient.Disconnect(ctx); err != nil {
+			log.Fatalf("Failed to gracefully disconnect from MongoDB: %s", err)
+		}
+	}()
 }
 
 func setupBot() {
