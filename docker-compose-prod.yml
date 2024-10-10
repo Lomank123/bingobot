@@ -1,0 +1,55 @@
+services:
+  bingo-bot-telegram:
+    build:
+      context: .
+      dockerfile: ./deployments/production/telegram/Dockerfile
+    image: lomank/bingo-bot-telegram:1.0.0
+    container_name: bingo-bot-telegram
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - '${TELEGRAM_APP_PORT}:8000'
+    networks:
+      - bingo-network
+    depends_on:
+      - bingo-db
+
+  bingo-bot-discord:
+    build:
+      context: .
+      dockerfile: ./deployments/production/discord/Dockerfile
+    image: lomank/bingo-bot-discord:1.0.0
+    container_name: bingo-bot-discord
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - '${DISCORD_APP_PORT}:8000'
+    networks:
+      - bingo-network
+    depends_on:
+      - bingo-db
+
+  bingo-db:
+    build:
+      context: .
+      dockerfile: ./deployments/mongodb/Dockerfile
+    image: lomank/bingo-db:1.0.0
+    container_name: bingo-db
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - '${DB_INNER_PORT}:${DB_PORT}'
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - bingo-network
+
+volumes:
+  mongo-data:
+
+networks:
+  bingo-network:
+    external: true
