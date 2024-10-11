@@ -11,4 +11,6 @@ RUN apt-get update && \
     iputils-ping && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean && \
-    go mod download
+    go mod download && \
+    # For hot-reload
+    go install github.com/cespare/reflex@latest

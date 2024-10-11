@@ -15,7 +15,8 @@ services:
       - bingo-network
     depends_on:
       - bingo-db
-    command: go run cmd/telegram/main.go
+    # For hot-reload
+    command: reflex -r '\.go$' -s go run cmd/telegram/main.go
 
   bingo-bot-discord:
     build:
@@ -33,7 +34,8 @@ services:
       - bingo-network
     depends_on:
       - bingo-db
-    command: go run cmd/discord/main.go
+    # For hot-reload
+    command: reflex -r '\.go$' -s go run cmd/discord/main.go
 
   bingo-db:
     build:
