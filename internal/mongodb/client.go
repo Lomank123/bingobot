@@ -3,37 +3,32 @@ package mongo_client
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-var DBClient *mongo.Client
-var DB *mongo.Database
-
 // Connect to MongoDB and return a Client instance
-func ConnectToDB(uri string, dbName string) error {
+func ConnectToDB(uri string) (*mongo.Client, error) {
 	fmt.Println("Connecting to MongoDB...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-
-	defer cancel()
-
-	DBClient, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(
+		context.Background(),
+		options.Client().ApplyURI(uri),
+	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	DB = DBClient.Database(dbName)
-	err = DBClient.Ping(ctx, readpref.Primary())
+	// Ping after connection
+	err = client.Ping(context.Background(), readpref.Primary())
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Println("Successfully connected to MongoDB!")
-	return nil
+	return client, nil
 }

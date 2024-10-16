@@ -8,7 +8,8 @@ import (
 	"os/signal"
 
 	handlers "bingobot/internal/controllers/discord"
-	mongo_client "bingobot/internal/mongodb"
+	mongodb "bingobot/internal/mongodb"
+	services "bingobot/internal/services/discord"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -18,22 +19,23 @@ func main() {
 	config.LoadConfig()
 
 	// DB Setup
-	err := mongo_client.ConnectToDB(config.Cfg.DBURI, config.Cfg.DBName)
+	client, err := mongodb.ConnectToDB(config.Cfg.DBURI)
 
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %s", err)
 	}
 
-	session := initBot()
+	database := client.Database(config.Cfg.DBName)
+	services := services.NewDiscordService(database)
+	session := initBot(services)
 	startServing(session)
 }
 
-func initBot() *discordgo.Session {
+func initBot(services *services.DiscordService) *discordgo.Session {
 	session, _ := discordgo.New("Bot " + config.Cfg.DiscordBotToken)
 
-	// TODO: Pass initialized services to handlers
 	// Handlers
-	handlers.SetupHandlers(session)
+	handlers.SetupHandlers(session, services)
 
 	// Commands
 	_, err := session.ApplicationCommandBulkOverwrite(

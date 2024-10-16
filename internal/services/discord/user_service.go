@@ -9,26 +9,26 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type DiscordUserService struct {
+type UserService struct {
 	Collection *mongo.Collection
 }
 
-func (dus DiscordUserService) GetOrCreateUser(i *discordgo.Interaction) *models.User {
-	discordUser := dus.ParseDiscordUser(i)
-	user, err := dus.FindByDiscordId(discordUser.ID)
+func (us UserService) GetOrCreateUser(i *discordgo.Interaction) *models.User {
+	discordUser := us.ParseDiscordUser(i)
+	user, err := us.FindByDiscordId(discordUser.ID)
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			user = dus.CreateUser(discordUser.ID)
+			user = us.CreateUser(discordUser.ID)
 		}
 	}
 
 	return user
 }
 
-func (dus DiscordUserService) CreateUser(id string) *models.User {
+func (us UserService) CreateUser(id string) *models.User {
 	newUser := models.User{DiscordID: id}
-	_, err := dus.Collection.InsertOne(context.Background(), newUser)
+	_, err := us.Collection.InsertOne(context.Background(), newUser)
 
 	if err != nil {
 		panic(err)
@@ -38,8 +38,8 @@ func (dus DiscordUserService) CreateUser(id string) *models.User {
 }
 
 // Find user by discord user id
-func (dus DiscordUserService) FindByDiscordId(discordId string) (*models.User, error) {
-	result := dus.Collection.FindOne(context.Background(), bson.M{"discord_id": discordId})
+func (us UserService) FindByDiscordId(discordId string) (*models.User, error) {
+	result := us.Collection.FindOne(context.Background(), bson.M{"discord_id": discordId})
 
 	var user models.User
 	err := result.Decode(&user)
@@ -51,10 +51,16 @@ func (dus DiscordUserService) FindByDiscordId(discordId string) (*models.User, e
 	return &user, nil
 }
 
-func (DiscordUserService) ParseDiscordUser(i *discordgo.Interaction) *discordgo.User {
+func (UserService) ParseDiscordUser(i *discordgo.Interaction) *discordgo.User {
 	if i.Member != nil {
 		return i.Member.User
 	}
 
 	return i.User
+}
+
+func NewUserService(collection *mongo.Collection) *UserService {
+	return &UserService{
+		Collection: collection,
+	}
 }
