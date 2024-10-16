@@ -5,17 +5,38 @@ TG/Discord bot with various unique features
 
 ## Roadmap
 
+### Main features
+
 - Everything is shared between discord and tg bots
-- some statistic (from game)
-- game
-- Keep conversation and save some of the quotes. Send these quotes later after ~100 messages in chat
-- scoring system (for each action you receive points)
-- leaderboard (based on scoring system)
-- Guess who's message game (send random saved message/quote and set timer. Collect messages after it and if there's a correct nickname of the user then it guessed correctly. Otherwise after timer has expired tell the right answer)
-- bets
-- score transfer with limitations
-- Paid subscription
+
+Actions:
+- Scoring system
+  - User receives points after each command
+  - Store the score from TG and Discord separately
+- Real-time Score Leaderboard (based on scoring system)
+  - Think about system design in advance
+- Bets (based on scoring system)
+  - Admin writes a question with options to answer
+  - User can deposit up to a certain amount of points
 - Achievements
+  - Think of system design
+  - Use scoring system
+  - Use any other type of activity
+
+
+### Future plans
+
+- Scoring system
+  - Add daily limit
+  - Add points transfer with limitations
+- Unique TG game (triggered by 1+ users)
+  - Game Statistics
+- Unique Discord game (triggered by 1+ users)
+  - Game Statistics
+- Keep conversation and save some of the quotes. Send these quotes later after ~100 messages in chat
+- Guess who's message game (send random saved message/quote and set timer. Collect messages after it and if there's a correct nickname of the user then it guessed correctly. Otherwise after timer has expired tell the right answer)
+- Paid subscription
+
 
 ### DND ideas
 

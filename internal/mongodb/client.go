@@ -11,22 +11,25 @@ import (
 )
 
 var DBClient *mongo.Client
+var DB *mongo.Database
 
 // Connect to MongoDB and return a Client instance
-func ConnectToDB(uri string) error {
+func ConnectToDB(uri string, dbName string) error {
 	fmt.Println("Connecting to MongoDB...")
 
-	// TODO: Read about contexts
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 
 	defer cancel()
 
 	DBClient, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+
 	if err != nil {
 		return err
 	}
 
+	DB = DBClient.Database(dbName)
 	err = DBClient.Ping(ctx, readpref.Primary())
+
 	if err != nil {
 		return err
 	}

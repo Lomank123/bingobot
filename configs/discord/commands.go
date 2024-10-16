@@ -1,10 +1,14 @@
 package discord_config
 
-import "github.com/bwmarrin/discordgo"
+import (
+	consts "bingobot/internal/consts/discord"
+
+	"github.com/bwmarrin/discordgo"
+)
 
 var Commands = []*discordgo.ApplicationCommand{
 	{
-		Name:        "echo",
+		Name:        consts.ECHO_COMMAND,
 		Description: "Say something through a bot",
 		Options: []*discordgo.ApplicationCommandOption{
 			{
