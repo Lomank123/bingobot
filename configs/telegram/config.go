@@ -17,6 +17,7 @@ type Config struct {
 	DBPassword       string
 	DBURI            string
 	TelegramBotToken string
+	Debug            bool
 }
 
 var Cfg Config
@@ -44,6 +45,7 @@ func LoadConfig() {
 		Cfg.DBName,
 	)
 	Cfg.TelegramBotToken = utils.GetEnv("TELEGRAM_BOT_TOKEN", "test-token-1")
+	Cfg.Debug = utils.GetEnv("TELEGRAM_DEBUG", "false") == "true"
 
 	fmt.Println("Env loaded!")
 }

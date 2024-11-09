@@ -13,34 +13,39 @@ type UserService struct {
 	Collection *mongo.Collection
 }
 
-func (us UserService) GetOrCreateUser(i *discordgo.Interaction) *models.User {
+func (us UserService) GetOrCreateUser(i *discordgo.Interaction) (user *models.User, isCreated bool, error error) {
 	discordUser := us.ParseDiscordUser(i)
 	user, err := us.FindByDiscordId(discordUser.ID)
+	isCreated = false
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			user = us.CreateUser(discordUser.ID)
+			user, err = us.CreateUser(discordUser.ID)
+
+			if err != nil {
+				return nil, false, err
+			}
+
+			isCreated = true
 		}
 	}
 
-	return user
+	return user, isCreated, nil
 }
 
-func (us UserService) CreateUser(id string) *models.User {
+func (us UserService) CreateUser(id string) (*models.User, error) {
 	newUser := models.User{DiscordID: id}
 	_, err := us.Collection.InsertOne(context.Background(), newUser)
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return &newUser
+	return &newUser, nil
 }
 
-// Find user by discord user id
 func (us UserService) FindByDiscordId(discordId string) (*models.User, error) {
 	result := us.Collection.FindOne(context.Background(), bson.M{"discord_id": discordId})
-
 	var user models.User
 	err := result.Decode(&user)
 
@@ -51,6 +56,7 @@ func (us UserService) FindByDiscordId(discordId string) (*models.User, error) {
 	return &user, nil
 }
 
+// Return discord user instance parsed from interation event
 func (UserService) ParseDiscordUser(i *discordgo.Interaction) *discordgo.User {
 	if i.Member != nil {
 		return i.Member.User

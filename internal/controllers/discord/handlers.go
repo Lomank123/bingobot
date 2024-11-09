@@ -21,7 +21,12 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 			return
 		}
 
-		user := srvs.UserService.GetOrCreateUser(i.Interaction)
+		user, _, err := srvs.UserService.GetOrCreateUser(i.Interaction)
+
+		if err != nil {
+			log.Panicf("error occurred during user retrieval/creation: %s", err)
+		}
+
 		data := i.ApplicationCommandData()
 		options := utils.ParseOptions(data.Options)
 

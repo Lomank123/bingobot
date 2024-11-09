@@ -1,4 +1,4 @@
-package discord_consts
+package telegram_consts
 
 // Commands
 

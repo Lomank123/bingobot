@@ -19,12 +19,7 @@ func main() {
 	config.LoadConfig()
 
 	// DB Setup
-	client, err := mongodb.ConnectToDB(config.Cfg.DBURI)
-
-	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %s", err)
-	}
-
+	client := mongodb.ConnectToDB(config.Cfg.DBURI)
 	database := client.Database(config.Cfg.DBName)
 	services := services.NewDiscordService(database)
 	session := initBot(services)

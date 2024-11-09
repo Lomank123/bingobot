@@ -3,14 +3,14 @@ package mongo_client
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 // Connect to MongoDB and return a Client instance
-func ConnectToDB(uri string) (*mongo.Client, error) {
+func ConnectToDB(uri string) *mongo.Client {
 	fmt.Println("Connecting to MongoDB...")
 
 	client, err := mongo.Connect(
@@ -19,16 +19,9 @@ func ConnectToDB(uri string) (*mongo.Client, error) {
 	)
 
 	if err != nil {
-		return nil, err
-	}
-
-	// Ping after connection
-	err = client.Ping(context.Background(), readpref.Primary())
-
-	if err != nil {
-		return nil, err
+		log.Fatalf("Failed to connect to MongoDB: %s", err)
 	}
 
 	fmt.Println("Successfully connected to MongoDB!")
-	return client, nil
+	return client
 }

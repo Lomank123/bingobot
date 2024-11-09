@@ -1,4 +1,4 @@
-package discord_services
+package telegram_services
 
 import (
 	consts "bingobot/internal/consts"
@@ -6,15 +6,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type DiscordService struct {
+type TelegramService struct {
 	UserService *UserService
 	EchoService *EchoService
 }
 
-func NewDiscordService(database *mongo.Database) *DiscordService {
+func NewTelegramService(database *mongo.Database) *TelegramService {
 	usersCollection := database.Collection(consts.USER_COLLECTION_NAME)
 
-	return &DiscordService{
+	return &TelegramService{
 		UserService: NewUserService(usersCollection),
 		EchoService: NewEchoService(),
 	}

@@ -15,6 +15,7 @@ func (EchoService) Handle(
 ) string {
 	// Pass user data to service function
 	message := opts["message"].StringValue()
+	// TODO: Replace id with username
 	return fmt.Sprintf("**%s says:** %s", user.DiscordID, message)
 }
 
