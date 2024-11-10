@@ -8,19 +8,18 @@ import (
 
 var Commands = []*discordgo.ApplicationCommand{
 	{
+		Name:        consts.HELP_COMMAND,
+		Description: "Shows tips for commands",
+	},
+	{
 		Name:        consts.ECHO_COMMAND,
-		Description: "Say something through a bot",
+		Description: "Echoes your message back to the chat",
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Name:        "message",
 				Description: "Contents of the message",
 				Type:        discordgo.ApplicationCommandOptionString,
 				Required:    true,
-			},
-			{
-				Name:        "author",
-				Description: "Whether to prepend message's author",
-				Type:        discordgo.ApplicationCommandOptionBoolean,
 			},
 		},
 	},

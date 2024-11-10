@@ -29,24 +29,30 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 
 		data := i.ApplicationCommandData()
 		options := utils.ParseOptions(data.Options)
+		message := ""
 
-		// Echo
-		if data.Name == consts.ECHO_COMMAND {
-			result := srvs.EchoService.Handle(options, user)
+		switch data.Name {
+		case consts.ECHO_COMMAND:
+			message = srvs.EchoService.Handle(options, user)
+		case consts.HELP_COMMAND:
+			// TODO: Implement help command
+			message = "Help command is not implemented yet."
+		default:
+			message = "I don't know that command. Try /help to see all available commands."
+		}
 
-			// Serialize the result and send via bot
-			responseData := discordgo.InteractionResponseData{
-				Content: result,
-			}
-			response := discordgo.InteractionResponse{
-				Type: discordgo.InteractionResponseChannelMessageWithSource,
-				Data: &responseData,
-			}
-			err := s.InteractionRespond(i.Interaction, &response)
+		// Serialize the result and send via bot
+		responseData := discordgo.InteractionResponseData{
+			Content: message,
+		}
+		response := discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &responseData,
+		}
+		err = s.InteractionRespond(i.Interaction, &response)
 
-			if err != nil {
-				log.Panicf("could not respond to interaction: %s", err)
-			}
+		if err != nil {
+			log.Panicf("could not respond to interaction: %s", err)
 		}
 	})
 }

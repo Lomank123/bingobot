@@ -25,13 +25,6 @@ func HandleUpdate(
 		return
 	}
 
-	// TODO: Track chat id, user id and input message
-	log.Printf(
-		"\n\n[%s] %s\n\n",
-		update.Message.From.UserName,
-		update.Message.Text,
-	)
-
 	userId := fmt.Sprintf("%d", update.Message.From.ID)
 	user, _, err := srvs.UserService.GetOrCreateUser(userId)
 
@@ -42,12 +35,14 @@ func HandleUpdate(
 	// 2nd arg is text and by default it's empty
 	response := telegram.NewMessage(update.Message.Chat.ID, "")
 
-	// TODO: Check how to add auto-complete and description for commands
-	// Handling all possible commands
+	// Handle all possible commands
 	switch update.Message.Command() {
 	case consts.ECHO_COMMAND:
 		response.Text = srvs.EchoService.Handle(update, user)
 		response.ReplyToMessageID = update.Message.MessageID
+	case consts.HELP_COMMAND:
+		// TODO: Implement help command
+		response.Text = "Help command is not implemented yet."
 	default:
 		response.Text = "I don't know that command. Try /help to see all available commands."
 	}
