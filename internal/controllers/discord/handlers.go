@@ -3,6 +3,7 @@ package discord_handlers
 import (
 	"log"
 
+	general_consts "bingobot/internal/consts"
 	consts "bingobot/internal/consts/discord"
 	services "bingobot/internal/services/discord"
 	utils "bingobot/internal/utils/discord"
@@ -35,10 +36,22 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 		case consts.ECHO_COMMAND:
 			message = srvs.EchoService.Handle(options, user)
 		case consts.HELP_COMMAND:
-			// TODO: Implement help command
-			message = "Help command is not implemented yet."
+			// TODO: Implement command
+			message = general_consts.COMMAND_NOT_FOUND_TEXT
+		case consts.MY_SCORE_COMMAND:
+			// TODO: Implement command
+			message = general_consts.COMMAND_NOT_FOUND_TEXT
+		case consts.LEADERBOARD_COMMAND:
+			// TODO: Implement command
+			message = general_consts.COMMAND_NOT_FOUND_TEXT
 		default:
-			message = "I don't know that command. Try /help to see all available commands."
+			message = general_consts.COMMAND_NOT_FOUND_TEXT
+		}
+
+		err = srvs.ScoreService.IncrementScore(user, data.Name)
+
+		if err != nil {
+			log.Printf("could not increment score: %s", err)
 		}
 
 		// Serialize the result and send via bot

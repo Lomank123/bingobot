@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	general_consts "bingobot/internal/consts"
 	consts "bingobot/internal/consts/telegram"
 	services "bingobot/internal/services/telegram"
 
@@ -41,10 +42,16 @@ func HandleUpdate(
 		response.Text = srvs.EchoService.Handle(update, user)
 		response.ReplyToMessageID = update.Message.MessageID
 	case consts.HELP_COMMAND:
-		// TODO: Implement help command
-		response.Text = "Help command is not implemented yet."
+		// TODO: Implement command
+		response.Text = general_consts.COMMAND_NOT_FOUND_TEXT
+	case consts.MY_SCORE_COMMAND:
+		// TODO: Implement command
+		response.Text = general_consts.COMMAND_NOT_FOUND_TEXT
+	case consts.LEADERBOARD_COMMAND:
+		// TODO: Implement command
+		response.Text = general_consts.COMMAND_NOT_FOUND_TEXT
 	default:
-		response.Text = "I don't know that command. Try /help to see all available commands."
+		response.Text = general_consts.COMMAND_NOT_FOUND_TEXT
 	}
 
 	if _, err := bot.Send(response); err != nil {

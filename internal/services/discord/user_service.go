@@ -3,14 +3,19 @@ package discord_services
 import (
 	models "bingobot/internal/models"
 	"context"
+	"log"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type UserService struct {
-	Collection *mongo.Collection
+	Collection                   *mongo.Collection
+	UserDiscordProfileCollection *mongo.Collection
+	UserScoreCollection          *mongo.Collection
 }
 
 func (us UserService) GetOrCreateUser(i *discordgo.Interaction) (user *models.User, isCreated bool, error error) {
@@ -20,7 +25,7 @@ func (us UserService) GetOrCreateUser(i *discordgo.Interaction) (user *models.Us
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			user, err = us.CreateUser(discordUser.ID)
+			user, err = us.CreateUser(discordUser)
 
 			if err != nil {
 				return nil, false, err
@@ -33,12 +38,40 @@ func (us UserService) GetOrCreateUser(i *discordgo.Interaction) (user *models.Us
 	return user, isCreated, nil
 }
 
-func (us UserService) CreateUser(id string) (*models.User, error) {
-	newUser := models.User{DiscordID: id}
-	_, err := us.Collection.InsertOne(context.Background(), newUser)
+func (us UserService) CreateUser(discordUser *discordgo.User) (*models.User, error) {
+	newUser := models.User{DiscordID: discordUser.ID}
+	res, err := us.Collection.InsertOne(context.Background(), newUser)
 
 	if err != nil {
 		return nil, err
+	}
+
+	// Otherwise it will be set to ObjectId('000...00')
+	newUser.ID = res.InsertedID.(primitive.ObjectID)
+
+	_, err = us.UserDiscordProfileCollection.InsertOne(
+		context.Background(),
+		bson.M{"user_id": newUser.ID, "username": discordUser.Username},
+	)
+
+	// TODO: Add error handling
+	// TODO: Make all db insertions in a transaction
+	if err != nil {
+		log.Panicf("could not insert discord profile for user %s: %s", newUser.ID, err)
+	}
+
+	_, err = us.UserScoreCollection.InsertOne(
+		context.Background(),
+		bson.M{
+			"user_id":        newUser.ID,
+			"discord_score":  0,
+			"telegram_score": 0,
+			"last_score_at":  primitive.NewDateTimeFromTime(time.Now()),
+		},
+	)
+
+	if err != nil {
+		log.Panicf("could not insert score profile for user %s: %s", newUser.ID, err)
 	}
 
 	return &newUser, nil
@@ -65,8 +98,14 @@ func (UserService) ParseDiscordUser(i *discordgo.Interaction) *discordgo.User {
 	return i.User
 }
 
-func NewUserService(collection *mongo.Collection) *UserService {
+func NewUserService(
+	collection *mongo.Collection,
+	userDiscordProfileCollection *mongo.Collection,
+	userScoreProfileCollection *mongo.Collection,
+) *UserService {
 	return &UserService{
-		Collection: collection,
+		Collection:                   collection,
+		UserDiscordProfileCollection: userDiscordProfileCollection,
+		UserScoreCollection:          userScoreProfileCollection,
 	}
 }

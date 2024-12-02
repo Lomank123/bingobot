@@ -39,6 +39,8 @@ func (us UserService) CreateUser(telegramId string) (*models.User, error) {
 		return nil, err
 	}
 
+	// TODO: Create telegram profile and score profile here
+
 	return &newUser, nil
 }
 
