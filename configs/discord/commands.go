@@ -23,4 +23,8 @@ var Commands = []*discordgo.ApplicationCommand{
 			},
 		},
 	},
+	{
+		Name:        consts.MY_SCORE_COMMAND,
+		Description: "Shows your current score",
+	},
 }

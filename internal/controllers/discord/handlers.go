@@ -1,6 +1,7 @@
 package discord_handlers
 
 import (
+	"fmt"
 	"log"
 
 	general_consts "bingobot/internal/consts"
@@ -39,8 +40,13 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 			// TODO: Implement command
 			message = general_consts.COMMAND_NOT_FOUND_TEXT
 		case consts.MY_SCORE_COMMAND:
-			// TODO: Implement command
-			message = general_consts.COMMAND_NOT_FOUND_TEXT
+			score, err := srvs.ScoreService.GetTotalUserScore(user)
+
+			if err != nil {
+				message = "Error occurred while getting your score. Try again later"
+			}
+
+			message = fmt.Sprintf("Your total score is %d", score)
 		case consts.LEADERBOARD_COMMAND:
 			// TODO: Implement command
 			message = general_consts.COMMAND_NOT_FOUND_TEXT
