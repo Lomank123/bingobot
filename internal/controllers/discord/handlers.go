@@ -40,13 +40,14 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 			// TODO: Implement command
 			message = general_consts.COMMAND_NOT_FOUND_TEXT
 		case consts.MY_SCORE_COMMAND:
-			score, err := srvs.ScoreService.GetTotalUserScore(user)
+			score, err := srvs.ScoreService.GetUserTotalScore(user)
 
 			if err != nil {
+				log.Printf("could not get user score: %s", err)
 				message = "Error occurred while getting your score. Try again later"
 			}
 
-			message = fmt.Sprintf("Your total score is %d", score)
+			message = fmt.Sprintf("Your total score is %d points. Well done!", score)
 		case consts.LEADERBOARD_COMMAND:
 			// TODO: Implement command
 			message = general_consts.COMMAND_NOT_FOUND_TEXT
@@ -54,7 +55,11 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 			message = general_consts.COMMAND_NOT_FOUND_TEXT
 		}
 
-		err = srvs.ScoreService.IncrementScore(user, data.Name)
+		err = srvs.ScoreService.RecordScore(
+			user,
+			data.Name,
+			general_consts.DISCORD_DOMAIN,
+		)
 
 		if err != nil {
 			log.Printf("could not increment score: %s", err)

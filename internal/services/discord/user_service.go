@@ -4,7 +4,6 @@ import (
 	models "bingobot/internal/models"
 	"context"
 	"log"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"go.mongodb.org/mongo-driver/bson"
@@ -60,20 +59,6 @@ func (us UserService) CreateUser(discordUser *discordgo.User) (*models.User, err
 		log.Panicf("could not insert discord profile for user %s: %s", newUser.ID, err)
 	}
 
-	_, err = us.UserScoreCollection.InsertOne(
-		context.Background(),
-		bson.M{
-			"user_id":        newUser.ID,
-			"discord_score":  0,
-			"telegram_score": 0,
-			"last_score_at":  primitive.NewDateTimeFromTime(time.Now()),
-		},
-	)
-
-	if err != nil {
-		log.Panicf("could not insert score profile for user %s: %s", newUser.ID, err)
-	}
-
 	return &newUser, nil
 }
 
@@ -101,11 +86,9 @@ func (UserService) ParseDiscordUser(i *discordgo.Interaction) *discordgo.User {
 func NewUserService(
 	collection *mongo.Collection,
 	userDiscordProfileCollection *mongo.Collection,
-	userScoreProfileCollection *mongo.Collection,
 ) *UserService {
 	return &UserService{
 		Collection:                   collection,
 		UserDiscordProfileCollection: userDiscordProfileCollection,
-		UserScoreCollection:          userScoreProfileCollection,
 	}
 }
