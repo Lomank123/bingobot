@@ -57,7 +57,15 @@ func (ss ScoreService) RecordScore(
 		return nil
 	}
 
-	// TODO: Add barrier for score incrementation
+	isLimitExceeded, err := ss.CheckScoreLimitExceeded(user)
+
+	if err != nil {
+		return err
+	}
+	if isLimitExceeded {
+		log.Printf("User (%s) has exceeded score limit", user.ID)
+		return nil
+	}
 
 	scoreLog := models.UserScoreRecord{
 		UserId:    user.ID,
@@ -80,9 +88,35 @@ func (ss ScoreService) RecordScore(
 }
 
 // Check if user has exceeded score limit per amount of time
-func (ss ScoreService) CheckScoreLimit(user *models.User) (bool, error) {
-	// TODO: Implement
-	return false, nil
+func (ss ScoreService) CheckScoreLimitExceeded(user *models.User) (bool, error) {
+	// Aggregate user score for the last 24 hours
+	yesterday := primitive.NewDateTimeFromTime(time.Now().Add(-24 * time.Hour))
+	pipeline := mongo.Pipeline{
+		{
+			{Key: "$match", Value: bson.D{
+				{Key: "user_id", Value: user.ID},
+				{Key: "created_at", Value: bson.D{
+					{Key: "$gte", Value: yesterday},
+				}},
+			}},
+		},
+		{
+			{Key: "$group", Value: bson.D{
+				// Required by mongo, Value can be nil
+				{Key: "_id", Value: "$user_id"},
+				{Key: "score", Value: bson.D{
+					{Key: "$sum", Value: "$score"}},
+				},
+			}},
+		},
+	}
+	score, err := ss.aggregateUserScore(pipeline)
+
+	if err != nil {
+		return false, err
+	}
+
+	return score >= consts.SCORE_LIMIT_PER_DAY, nil
 }
 
 // Return aggregated score for a user
@@ -98,12 +132,24 @@ func (ss ScoreService) GetUserTotalScore(user *models.User) (int, error) {
 			{Key: "$group", Value: bson.D{
 				// Required by mongo, Value can be nil
 				{Key: "_id", Value: "$user_id"},
-				{Key: "total_score", Value: bson.D{
+				{Key: "score", Value: bson.D{
 					{Key: "$sum", Value: "$score"}},
 				},
 			}},
 		},
 	}
+	score, err := ss.aggregateUserScore(pipeline)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return score, nil
+}
+
+// TODO: Probably can be refactored
+// In pipeline aggregation field must be called 'score'
+func (ss ScoreService) aggregateUserScore(pipeline mongo.Pipeline) (int, error) {
 	cursor, err := ss.Collection.Aggregate(
 		context.Background(),
 		pipeline,
@@ -117,7 +163,7 @@ func (ss ScoreService) GetUserTotalScore(user *models.User) (int, error) {
 
 	// Used to unpack mongo result
 	var result struct {
-		TotalScore int `bson:"total_score"`
+		Score int `bson:"score"`
 	}
 
 	// Here we seek only first entry
@@ -128,7 +174,7 @@ func (ss ScoreService) GetUserTotalScore(user *models.User) (int, error) {
 			return 0, err
 		}
 
-		return result.TotalScore, nil
+		return result.Score, nil
 	}
 
 	return 0, nil

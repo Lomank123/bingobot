@@ -62,7 +62,7 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 		)
 
 		if err != nil {
-			log.Printf("could not increment score: %s", err)
+			log.Printf("could not record score: %s", err)
 		}
 
 		// Serialize the result and send via bot
