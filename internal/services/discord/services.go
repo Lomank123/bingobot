@@ -9,9 +9,10 @@ import (
 )
 
 type DiscordService struct {
-	UserService  *UserService
-	EchoService  *EchoService
-	ScoreService *services.ScoreService
+	UserService    *services.UserService
+	ScoreService   *services.ScoreService
+	ProfileService *ProfileService
+	EchoService    *EchoService
 }
 
 func NewDiscordService(database *mongo.Database) *DiscordService {
@@ -24,11 +25,9 @@ func NewDiscordService(database *mongo.Database) *DiscordService {
 	)
 
 	return &DiscordService{
-		UserService: NewUserService(
-			usersCollection,
-			userDiscordProfileCollection,
-		),
-		EchoService:  NewEchoService(),
-		ScoreService: services.NewScoreService(userScoreRecordCollection),
+		UserService:    services.NewUserService(usersCollection),
+		ScoreService:   services.NewScoreService(userScoreRecordCollection),
+		ProfileService: NewProfileService(userDiscordProfileCollection),
+		EchoService:    NewEchoService(),
 	}
 }

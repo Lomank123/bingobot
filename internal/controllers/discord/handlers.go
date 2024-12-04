@@ -6,6 +6,7 @@ import (
 
 	general_consts "bingobot/internal/consts"
 	consts "bingobot/internal/consts/discord"
+	"bingobot/internal/models"
 	services "bingobot/internal/services/discord"
 	utils "bingobot/internal/utils/discord"
 
@@ -23,10 +24,10 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 			return
 		}
 
-		user, _, err := srvs.UserService.GetOrCreateUser(i.Interaction)
+		user, err := getOrCreateUser(srvs, i.Interaction)
 
 		if err != nil {
-			log.Panicf("error occurred during user retrieval/creation: %s", err)
+			log.Panicf("could not get or create user: %s", err)
 		}
 
 		data := i.ApplicationCommandData()
@@ -79,4 +80,30 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 			log.Panicf("could not respond to interaction: %s", err)
 		}
 	})
+}
+
+// TODO: Think of moving such functionality to a separate service
+func getOrCreateUser(
+	srvs *services.DiscordService,
+	i *discordgo.Interaction,
+) (*models.User, error) {
+	// TODO: Make inserts in a single transaction
+	discordUser := utils.ParseDiscordUser(i)
+	user, isCreated, err := srvs.UserService.GetOrCreate(discordUser.ID, "")
+
+	if isCreated {
+		_, err = srvs.ProfileService.Create(user, discordUser)
+
+		if err != nil {
+			log.Printf("could not create user profile: %s", err)
+			return nil, err
+		}
+	}
+
+	if err != nil {
+		log.Printf("error occurred during user retrieval/creation: %s", err)
+		return nil, err
+	}
+
+	return user, nil
 }
