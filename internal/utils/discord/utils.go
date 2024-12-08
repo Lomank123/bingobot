@@ -13,3 +13,11 @@ func ParseOptions(options []*discordgo.ApplicationCommandInteractionDataOption) 
 
 	return
 }
+
+func ParseDiscordUser(i *discordgo.Interaction) *discordgo.User {
+	if i.Member != nil {
+		return i.Member.User
+	}
+
+	return i.User
+}

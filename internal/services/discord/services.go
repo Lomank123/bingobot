@@ -4,30 +4,30 @@ import (
 	consts "bingobot/internal/consts"
 
 	"go.mongodb.org/mongo-driver/mongo"
+
+	services "bingobot/internal/services"
 )
 
 type DiscordService struct {
-	UserService  *UserService
-	EchoService  *EchoService
-	ScoreService *ScoreService
+	UserService    *services.UserService
+	ScoreService   *services.ScoreService
+	ProfileService *ProfileService
+	EchoService    *EchoService
 }
 
 func NewDiscordService(database *mongo.Database) *DiscordService {
 	usersCollection := database.Collection(consts.USER_COLLECTION_NAME)
-	userScoreProfileCollection := database.Collection(
-		consts.USER_SCORE_PROFILE_COLLECTION_NAME,
+	userScoreRecordCollection := database.Collection(
+		consts.USER_SCORE_RECORD_COLLECTION_NAME,
 	)
 	userDiscordProfileCollection := database.Collection(
 		consts.USER_DISCORD_PROFILE_COLLECTION_NAME,
 	)
 
 	return &DiscordService{
-		UserService: NewUserService(
-			usersCollection,
-			userDiscordProfileCollection,
-			userScoreProfileCollection,
-		),
-		EchoService:  NewEchoService(),
-		ScoreService: NewScoreService(userScoreProfileCollection),
+		UserService:    services.NewUserService(usersCollection),
+		ScoreService:   services.NewScoreService(userScoreRecordCollection),
+		ProfileService: NewProfileService(userDiscordProfileCollection),
+		EchoService:    NewEchoService(),
 	}
 }

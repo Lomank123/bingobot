@@ -1,9 +1,14 @@
 package consts
 
+// Domains
+
+const TELEGRAM_DOMAIN = "telegram"
+const DISCORD_DOMAIN = "discord"
+
 // Collections
 
 const USER_COLLECTION_NAME = "users"
-const USER_SCORE_PROFILE_COLLECTION_NAME = "user_score_profiles"
+const USER_SCORE_RECORD_COLLECTION_NAME = "user_score_records"
 const USER_TELEGRAM_PROFILE_COLLECTION_NAME = "user_telegram_profiles"
 const USER_DISCORD_PROFILE_COLLECTION_NAME = "user_discord_profiles"
 
