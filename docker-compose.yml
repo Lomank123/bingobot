@@ -52,6 +52,15 @@ services:
       - mongo-data:/data/db
     networks:
       - bingo-network
+  
+  bingo-redis:
+    container_name: bingo-redis
+    restart: always
+    env_file:
+      - .env
+    image: redis/redis-stack-server
+    ports:
+      - '${REDIS_PORT}:6379'
 
 volumes:
   mongo-data:

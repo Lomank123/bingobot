@@ -19,6 +19,11 @@ type Config struct {
 	DiscordBotToken  string
 	DiscordAppId     string
 	DiscordPublicKey string
+	RedisHost        string
+	RedisPort        string
+	RedisAddress     string
+	RedisUsername    string
+	RedisPassword    string
 }
 
 var Cfg Config
@@ -48,6 +53,11 @@ func LoadConfig() {
 	Cfg.DiscordBotToken = utils.GetEnv("DISCORD_BOT_TOKEN", "test-token-1")
 	Cfg.DiscordAppId = utils.GetEnv("DISCORD_APP_ID", "app-id-1")
 	Cfg.DiscordPublicKey = utils.GetEnv("DISCORD_PUBLIC_KEY", "public-key-1")
+	Cfg.RedisHost = utils.GetEnv("REDIS_HOST", "localhost")
+	Cfg.RedisPort = utils.GetEnv("REDIS_PORT", "6379")
+	Cfg.RedisAddress = fmt.Sprintf("%s:%s", Cfg.RedisHost, Cfg.RedisPort)
+	Cfg.RedisUsername = utils.GetEnv("REDIS_USER", "redis-user-1")
+	Cfg.RedisPassword = utils.GetEnv("REDIS_PASS", "redis-password-1")
 
 	fmt.Println("Env loaded!")
 }

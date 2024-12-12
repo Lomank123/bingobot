@@ -12,6 +12,7 @@ import (
 	services "bingobot/internal/services/discord"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -21,7 +22,13 @@ func main() {
 	// DB Setup
 	client := mongodb.ConnectToDB(config.Cfg.DBURI)
 	database := client.Database(config.Cfg.DBName)
-	services := services.NewDiscordService(database)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: config.Cfg.RedisAddress,
+		DB:   0, // Use default DB
+		// Username: config.Cfg.RedisUsername,
+		// Password: config.Cfg.RedisPassword,
+	})
+	services := services.NewDiscordService(database, redisClient)
 	session := initBot(services)
 	startServing(session)
 }
