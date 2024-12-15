@@ -103,3 +103,12 @@ docker compose up -d --build
 ```shell
 docker compose -f docker-compose-prod.yml up -d --build
 ```
+
+
+## Commands
+
+- To run Discord seeders:
+
+```
+docker compose exec bingo-bot-discord go run cmd/seeders/discord/main.go
+```
