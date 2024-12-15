@@ -50,13 +50,17 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 
 			message = fmt.Sprintf("Your total score is %d points. Well done!", score)
 		case consts.LEADERBOARD_COMMAND:
-			// TODO: Implement command
-			message = general_consts.COMMAND_NOT_FOUND_TEXT
+			startDateStr := options["start_date"].StringValue()
+			endDateStr := options["end_date"].StringValue()
+			message, _ = srvs.LeaderboardService.GetLeaderboardMessage(
+				user, startDateStr, endDateStr,
+			)
 		default:
 			message = general_consts.COMMAND_NOT_FOUND_TEXT
 		}
 
-		err = srvs.ScoreService.RecordScore(
+		// Record the score
+		score, err := srvs.ScoreService.RecordScore(
 			user,
 			data.Name,
 			general_consts.DISCORD_DOMAIN,
@@ -64,6 +68,14 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 
 		if err != nil {
 			log.Printf("could not record score: %s", err)
+		}
+
+		err = srvs.LeaderboardService.RecordScore(user, score)
+
+		if err != nil {
+			// TODO: Perhaps we need to check how much this error occurred.
+			// If more than 3 times, then we have to trigger re-calculation.
+			log.Printf("could not record score for leaderboard: %s", err)
 		}
 
 		// Serialize the result and send via bot

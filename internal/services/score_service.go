@@ -16,7 +16,8 @@ import (
 )
 
 // Score service is responsible for
-// ANY action which implies score modification
+// ANY action which implies score modification.
+// This is the source of truth for the score system.
 type ScoreService struct {
 	Collection *mongo.Collection
 }
@@ -42,29 +43,30 @@ func FindScore(domain string, command string) (int, bool, error) {
 	return score, exists, nil
 }
 
-// Create user score record
+// Create user score record.
+// Return the amount of points added to the user.
 func (ss ScoreService) RecordScore(
 	user *models.User,
 	command string,
 	domain string,
-) error {
+) (int, error) {
 	score, _, err := FindScore(domain, command)
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if score == 0 {
-		return nil
+		return 0, nil
 	}
 
 	isLimitExceeded, err := ss.CheckScoreLimitExceeded(user)
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if isLimitExceeded {
 		log.Printf("User (%s) has exceeded score limit", user.ID)
-		return nil
+		return 0, nil
 	}
 
 	scoreLog := models.UserScoreRecord{
@@ -84,7 +86,7 @@ func (ss ScoreService) RecordScore(
 		command,
 	)
 
-	return nil
+	return score, nil
 }
 
 // Check if user has exceeded score limit per amount of time
