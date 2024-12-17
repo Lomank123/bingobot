@@ -5,6 +5,7 @@ import (
 	discord_consts "bingobot/internal/consts/discord"
 	telegram_consts "bingobot/internal/consts/telegram"
 	"bingobot/internal/models"
+	types "bingobot/internal/types"
 	"context"
 	"fmt"
 	"log"
@@ -147,6 +148,76 @@ func (ss ScoreService) GetUserTotalScore(user *models.User) (int, error) {
 	}
 
 	return score, nil
+}
+
+// Aggregate leaderboard data for each user by month and year.
+// Used for leaderboard calculation.
+func (ss ScoreService) AggregateLeaderboardData() (
+	result []types.AggregatedUserScore,
+	err error,
+) {
+	// Group by year, month and user_id
+	// Aggregate sum of scores for each row
+	// https://www.mongodb.com/docs/manual/reference/operator/aggregation/group/#retrieve-distinct-values
+	pipeline := mongo.Pipeline{
+		{
+			{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: bson.D{
+					{Key: "year", Value: bson.D{
+						{Key: "$year", Value: "$created_at"},
+					}},
+					{Key: "month", Value: bson.D{
+						{Key: "$month", Value: "$created_at"},
+					}},
+					{Key: "user_id", Value: "$user_id"},
+				}},
+				{Key: "score", Value: bson.D{
+					{Key: "$sum", Value: "$score"}},
+				},
+			}},
+		},
+	}
+
+	cursor, err := ss.Collection.Aggregate(
+		context.Background(),
+		pipeline,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer cursor.Close(context.Background())
+
+	type aggregateKey struct {
+		Year   int    `bson:"year"`
+		Month  int    `bson:"month"`
+		UserID string `bson:"user_id"`
+	}
+	var userScore struct {
+		Key   aggregateKey `bson:"_id"`
+		Score int          `bson:"score"`
+	}
+
+	for cursor.Next(context.Background()) {
+		err := cursor.Decode(&userScore)
+
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(
+			result,
+			types.AggregatedUserScore{
+				Year:   userScore.Key.Year,
+				Month:  userScore.Key.Month,
+				UserID: userScore.Key.UserID,
+				Score:  userScore.Score,
+			},
+		)
+	}
+
+	return result, nil
 }
 
 // TODO: Probably can be refactored

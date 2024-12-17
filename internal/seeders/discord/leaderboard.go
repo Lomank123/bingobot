@@ -15,8 +15,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// TODO: Add the leaderboard calculation command here
-
 // For each user insert numberOfRecords records
 func GenerateScoresForUsers(userIds []primitive.ObjectID, scoreCollection *mongo.Collection, numberOfRecords int) {
 	for _, userId := range userIds {

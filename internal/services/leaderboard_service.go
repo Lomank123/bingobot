@@ -9,6 +9,7 @@ import (
 
 	consts "bingobot/internal/consts"
 	"bingobot/internal/models"
+	"bingobot/internal/types"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -310,7 +311,17 @@ func (LeaderboardService) validateDates(startDateStr, endDateStr string) error {
 	return nil
 }
 
-// TODO: Add recalculation command (will be based on score service)
+// TODO: Implement this method
+func (ls LeaderboardService) RecalculateLeaderboard(
+	aggregatedData []types.AggregatedUserScore,
+) error {
+	// Clear all redis sorted sets connected with leaderboards
+
+	// Pass data from score service here
+
+	// For each entry create/append item to leaderboard
+	return nil
+}
 
 func NewLeaderboardService(redisClient *redis.Client) *LeaderboardService {
 	return &LeaderboardService{RedisClient: redisClient}
