@@ -21,19 +21,23 @@ type LeaderboardService struct {
 
 // Append user score to the recent leaderboard.
 // If the leaderboard does not exist, it will be created.
-func (ls LeaderboardService) RecordScore(user *models.User, score int) error {
+func (ls LeaderboardService) RecordScore(
+	userID string,
+	score int,
+	date time.Time,
+) error {
 	if score == 0 {
 		return nil
 	}
 
-	dateStr := time.Now().Format(consts.LEADERBOARD_DATE_FORMAT)
+	dateStr := date.Format(consts.LEADERBOARD_DATE_FORMAT)
 	leaderboardID := fmt.Sprintf(consts.LEADERBOARD_ID_FORMAT, dateStr)
 
 	_, err := ls.RedisClient.ZIncrBy(
 		context.Background(),
 		leaderboardID,
 		float64(score),
-		user.ID.String(),
+		userID,
 	).Result()
 
 	if err != nil {
@@ -44,21 +48,24 @@ func (ls LeaderboardService) RecordScore(user *models.User, score int) error {
 }
 
 // Return the leaderboard message for the given date range with user stats.
+// Domain can be either discord or telegram.
 func (ls LeaderboardService) GetLeaderboardMessage(
 	user *models.User,
-	startDateStr, endDateStr string,
+	startDate, endDate string,
+	domain string,
 ) (string, error) {
-	err := ls.validateDates(startDateStr, endDateStr)
+	startDateStr, endDateStr, err := ls.formatDates(startDate, endDate)
 
 	if err != nil {
-		return "Invalid dates format.", err
+		log.Printf("could not format dates: %s", err)
+		return "Invalid date format", err
 	}
 
-	leaderboardID := ls.FormatLeaderboardID(startDateStr, endDateStr)
+	leaderboardID := ls.formatLeaderboardID(startDateStr, endDateStr)
 	var leaderboard *[]redis.Z
 
-	// Here we will return leaderboard for the given month
 	if startDateStr != "" && endDateStr == "" {
+		// Here we will return leaderboard for the given month
 		leaderboard, err = ls.GetLeaderboardByID(leaderboardID)
 	} else {
 		leaderboard, err = ls.GetAggregatedLeaderboard(
@@ -79,18 +86,25 @@ func (ls LeaderboardService) GetLeaderboardMessage(
 	}
 
 	return ls.buildLeaderboardMessage(
-		leaderboard, userStats, startDateStr, endDateStr,
+		leaderboard,
+		userStats,
+		startDateStr,
+		endDateStr,
+		startDate == "" && endDate == "",
+		domain,
 	), nil
 }
 
 // Return an aggregated leaderboard for the given dates range.
 // If it doesn't exist, calculate and return it.
-// Example (get all-time leaderboard):
-// LeaderboardService.GetAggregatedLeaderboard("", "")
 func (ls LeaderboardService) GetAggregatedLeaderboard(
 	startDateStr, endDateStr string,
 	aggregatedID string,
 ) (leaderboard *[]redis.Z, err error) {
+	if startDateStr == "" && endDateStr == "" {
+		return nil, fmt.Errorf("invalid date range")
+	}
+
 	// TODO: Add limit param to limit the amount of entries returned from the leaderboard
 	leaderboard, err = ls.GetLeaderboardByID(aggregatedID)
 
@@ -132,13 +146,17 @@ func (ls LeaderboardService) GetUserStats(
 	user *models.User,
 	leaderboardID string,
 ) (*redis.RankScore, error) {
-	rankWithScore, err := ls.RedisClient.ZRankWithScore(
+	rankWithScore, err := ls.RedisClient.ZRevRankWithScore(
 		context.Background(),
 		leaderboardID,
-		user.ID.String(),
+		user.ID.Hex(),
 	).Result()
 
-	if err != nil {
+	if err == redis.Nil {
+		// No leaderboard for the given month, return nil without error
+		return nil, nil
+	} else if err != nil {
+		// Other errors
 		return nil, err
 	}
 
@@ -164,7 +182,7 @@ func (ls LeaderboardService) GetLeaderboardByID(leaderboardID string) (
 
 // Construct the leaderboard ID based on the given date range.
 // Possible formats: leaderboard:2021:01, leaderboard-aggregated-2021:01-2021:03
-func (LeaderboardService) FormatLeaderboardID(
+func (LeaderboardService) formatLeaderboardID(
 	startDateStr, endDateStr string,
 ) string {
 	switch {
@@ -191,11 +209,58 @@ func (LeaderboardService) FormatLeaderboardID(
 	}
 }
 
+// Clear all redis sorted sets connected with leaderboards
+func (ls LeaderboardService) ClearAllLeaderboards() error {
+	ctx := context.Background()
+	iter := ls.RedisClient.Scan(ctx, 0, "leaderboard*", 0).Iterator()
+
+	for iter.Next(ctx) {
+		err := ls.RedisClient.Del(ctx, iter.Val()).Err()
+
+		if err != nil {
+			return fmt.Errorf("could not delete leaderboard key %s: %w", iter.Val(), err)
+		}
+	}
+
+	err := iter.Err()
+
+	if err != nil {
+		return fmt.Errorf("could not iterate through leaderboard keys: %w", err)
+	}
+
+	return nil
+}
+
+// Recalculate the leaderboards based on the aggregated data.
+func (ls LeaderboardService) RecalculateLeaderboard(
+	aggregatedData []types.AggregatedUserScore,
+) error {
+	for _, data := range aggregatedData {
+		dateStr := fmt.Sprintf("%d:%d", data.Year, data.Month)
+		parsedDate, _ := time.Parse(consts.LEADERBOARD_DATE_FORMAT, dateStr)
+		err := ls.RecordScore(data.UserID, data.Score, parsedDate)
+		log.Printf("User (%s) has %d points in %s", data.UserID, data.Score, dateStr)
+
+		if err != nil {
+			return fmt.Errorf(
+				"could not record score for User (%s): %w",
+				data.UserID,
+				err,
+			)
+		}
+	}
+
+	return nil
+}
+
 // Formats the leaderboard data for displaying in chat
 func (LeaderboardService) buildLeaderboardMessage(
 	leaderboard *[]redis.Z,
 	userStats *redis.RankScore,
 	startDateStr, endDateStr string,
+	isAllTime bool,
+	// TODO: Use domain arg
+	domain string,
 ) string {
 	if len(*leaderboard) == 0 {
 		return "Requested leaderboard has no records."
@@ -203,18 +268,27 @@ func (LeaderboardService) buildLeaderboardMessage(
 
 	var sb strings.Builder
 	var dateRange string
+	startDate, _ := time.Parse(consts.LEADERBOARD_DATE_FORMAT, startDateStr)
 
 	switch {
-	case startDateStr == "" && endDateStr == "":
+	case isAllTime:
 		dateRange = "All time"
 	case startDateStr != "" && endDateStr == "":
-		dateRange = startDateStr
-	default:
-		dateRange = fmt.Sprintf("%s - %s", startDateStr, endDateStr)
+		dateRange = startDate.Format("January, 2006")
+	case startDateStr != "" && endDateStr != "":
+		endDate, _ := time.Parse(consts.LEADERBOARD_DATE_FORMAT, endDateStr)
+		dateRange = fmt.Sprintf(
+			"from %s to %s",
+			startDate.Format("January, 2006"),
+			endDate.Format("January, 2006"),
+		)
 	}
 
 	sb.WriteString(fmt.Sprintf("Leaderboard (%s):\n\n", dateRange))
 
+	// TODO: Need a way to insert username instead of ID.
+	// Probably gather all ids in a list and then pass it to a method.
+	// The method will query users based on ids list and return their usernames based on domain.
 	for i, entry := range *leaderboard {
 		sb.WriteString(fmt.Sprintf(
 			"%d. %s - %d points\n",
@@ -278,49 +352,41 @@ func (LeaderboardService) getLeaderboardIDRange(
 	return dates, nil
 }
 
-// Validate the given start and end dates.
-func (LeaderboardService) validateDates(startDateStr, endDateStr string) error {
+// Format the given start and end dates.
+func (LeaderboardService) formatDates(startDateStr, endDateStr string) (
+	string, string, error,
+) {
 	// For all-time leaderboard
 	if startDateStr == "" && endDateStr == "" {
-		return nil
+		return consts.LEADERBOARD_START_DATE,
+			time.Now().Format(consts.LEADERBOARD_DATE_FORMAT),
+			nil
 	}
 
 	startDate, err := time.Parse(consts.LEADERBOARD_DATE_FORMAT, startDateStr)
 
 	if err != nil {
-		return fmt.Errorf("invalid start date format: %w", err)
+		return "", "", fmt.Errorf("invalid start date format: %w", err)
 	}
 
 	// In case user wants to retrieve leaderboard for a single month
 	if endDateStr == "" {
-		return nil
+		return startDateStr, "", nil
 	}
 
 	// Here full date range is validated
 	endDate, err := time.Parse(consts.LEADERBOARD_DATE_FORMAT, endDateStr)
 
 	if err != nil {
-		return fmt.Errorf("invalid end date format: %w", err)
+		return "", "", fmt.Errorf("invalid end date format: %w", err)
 	}
 
 	// Ensure startDate is before or equal to endDate
 	if startDate.After(endDate) {
-		return fmt.Errorf("start date must be before or equal to end date")
+		return "", "", fmt.Errorf("start date must be before or equal to end date")
 	}
 
-	return nil
-}
-
-// TODO: Implement this method
-func (ls LeaderboardService) RecalculateLeaderboard(
-	aggregatedData []types.AggregatedUserScore,
-) error {
-	// Clear all redis sorted sets connected with leaderboards
-
-	// Pass data from score service here
-
-	// For each entry create/append item to leaderboard
-	return nil
+	return startDateStr, endDateStr, nil
 }
 
 func NewLeaderboardService(redisClient *redis.Client) *LeaderboardService {

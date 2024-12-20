@@ -27,4 +27,22 @@ var Commands = []*discordgo.ApplicationCommand{
 		Name:        consts.MY_SCORE_COMMAND,
 		Description: "Shows your current score",
 	},
+	{
+		Name:        consts.LEADERBOARD_COMMAND,
+		Description: "Shows the leaderboard based on the given date range. If no range then shows all-time leaderboard.",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Name:        "start_date",
+				Description: "Start date for the leaderboard. Format: YYYY-MM.",
+				Type:        discordgo.ApplicationCommandOptionString,
+				Required:    false,
+			},
+			{
+				Name:        "end_date",
+				Description: "End date for the leaderboard. Format: YYYY-MM.",
+				Type:        discordgo.ApplicationCommandOptionString,
+				Required:    false,
+			},
+		},
+	},
 }

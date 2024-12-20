@@ -8,7 +8,7 @@ services:
     env_file:
       - .env
     ports:
-      - '${TELEGRAM_APP_PORT}:8000'
+      - "${TELEGRAM_APP_PORT}:8000"
     volumes:
       - .:/app
     networks:
@@ -27,7 +27,7 @@ services:
     env_file:
       - .env
     ports:
-      - '${DISCORD_APP_PORT}:8000'
+      - "${DISCORD_APP_PORT}:8000"
     volumes:
       - .:/app
     networks:
@@ -47,12 +47,12 @@ services:
     env_file:
       - .env
     ports:
-      - '${DB_INNER_PORT}:${DB_PORT}'
+      - "${DB_INNER_PORT}:${DB_PORT}"
     volumes:
       - mongo-data:/data/db
     networks:
       - bingo-network
-  
+
   bingo-redis:
     container_name: bingo-redis
     restart: always
@@ -60,10 +60,15 @@ services:
       - .env
     image: redis/redis-stack-server
     ports:
-      - '${REDIS_PORT}:6379'
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - bingo-network
 
 volumes:
   mongo-data:
+  redis-data:
 
 networks:
   bingo-network:

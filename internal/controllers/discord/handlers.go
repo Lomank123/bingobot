@@ -3,6 +3,7 @@ package discord_handlers
 import (
 	"fmt"
 	"log"
+	"time"
 
 	general_consts "bingobot/internal/consts"
 	consts "bingobot/internal/consts/discord"
@@ -50,10 +51,21 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 
 			message = fmt.Sprintf("Your total score is %d points. Well done!", score)
 		case consts.LEADERBOARD_COMMAND:
-			startDateStr := options["start_date"].StringValue()
-			endDateStr := options["end_date"].StringValue()
+			var startDateStr string
+			var endDateStr string
+
+			if val, ok := options["start_date"]; ok {
+				startDateStr = val.StringValue()
+			}
+			if val, ok := options["end_date"]; ok {
+				endDateStr = val.StringValue()
+			}
+
 			message, _ = srvs.LeaderboardService.GetLeaderboardMessage(
-				user, startDateStr, endDateStr,
+				user,
+				startDateStr,
+				endDateStr,
+				general_consts.DISCORD_DOMAIN,
 			)
 		default:
 			message = general_consts.COMMAND_NOT_FOUND_TEXT
@@ -70,7 +82,9 @@ func SetupHandlers(s *discordgo.Session, srvs *services.DiscordService) {
 			log.Printf("could not record score: %s", err)
 		}
 
-		err = srvs.LeaderboardService.RecordScore(user, score)
+		err = srvs.LeaderboardService.RecordScore(
+			user.ID.Hex(), score, time.Now(),
+		)
 
 		if err != nil {
 			// TODO: Perhaps we need to check how much this error occurred.

@@ -66,7 +66,7 @@ func (ss ScoreService) RecordScore(
 		return 0, err
 	}
 	if isLimitExceeded {
-		log.Printf("User (%s) has exceeded score limit", user.ID)
+		log.Printf("User (%s) has exceeded score limit", user.ID.Hex())
 		return 0, nil
 	}
 
@@ -81,7 +81,7 @@ func (ss ScoreService) RecordScore(
 
 	log.Printf(
 		"User (%s) gained %d points from %s for '%s' command",
-		user.ID,
+		user.ID.Hex(),
 		score,
 		domain,
 		command,

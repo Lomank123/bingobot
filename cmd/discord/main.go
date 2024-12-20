@@ -22,11 +22,10 @@ func main() {
 	// DB Setup
 	client := mongodb.ConnectToDB(config.Cfg.DBURI)
 	database := client.Database(config.Cfg.DBName)
+
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: config.Cfg.RedisAddress,
 		DB:   0, // Use default DB
-		// Username: config.Cfg.RedisUsername,
-		// Password: config.Cfg.RedisPassword,
 	})
 	services := services.NewDiscordService(database, redisClient)
 	session := initBot(services)

@@ -109,6 +109,24 @@ docker compose -f docker-compose-prod.yml up -d --build
 
 - To run Discord seeders:
 
-```
+```shell
 docker compose exec bingo-bot-discord go run cmd/seeders/discord/main.go
+```
+
+- To calculate leaderboard (Redis Sorted Sets):
+
+```shell
+docker compose exec bingo-bot-discord go run cmd/calculate_leaderboard/main.go
+```
+
+- To connect to Redis:
+
+```shell
+docker compose exec bingo-redis redis-cli
+```
+
+- To query leaderboard:
+
+```
+ZRANGE leaderboard:2024:12 0 -1 WITHSCORES
 ```
